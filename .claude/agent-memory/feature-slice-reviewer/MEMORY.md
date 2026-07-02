@@ -1,0 +1,1 @@
+- [Expense API Project Context](project-expense-api.md) — FastAPI expense approval workflow, slice-by-slice build, mock Entra ID auth, in-memory store with RLock

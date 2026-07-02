@@ -1,0 +1,127 @@
+[
+  {
+    "title": "[Slice 1] Foundation & Project Setup",
+    "description": "Initialize FastAPI project structure, add requirements.txt, configure basic settings, create __init__.py files",
+    "acceptance_criteria": [
+      "FastAPI project initialized with proper folder structure",
+      "requirements.txt contains all necessary dependencies (fastapi, uvicorn, pytest, pydantic)",
+      "Basic app configuration created",
+      "All __init__.py files in place"
+    ],
+    "blocked_by": null,
+    "labels": ["slice"]
+  },
+  {
+    "title": "[Slice 2] Data Models & In-Memory Storage",
+    "description": "Define Expense model with all required fields, implement in-memory storage with CRUD operations, add unit tests for models and storage",
+    "acceptance_criteria": [
+      "Expense model defined with: id, employee_id, amount, description, status, created_at, approved_at, processed_at, rejection_reason, manager_id, finance_id",
+      "In-memory storage implementation with get, create, update, list operations",
+      "Unit tests for models (validation)",
+      "Unit tests for storage CRUD operations",
+      ">80% code coverage for models and storage"
+    ],
+    "blocked_by": 1,
+    "labels": ["slice"]
+  },
+  {
+    "title": "[Slice 3] Authentication Middleware",
+    "description": "Implement header-based auth (X-User-ID, X-User-Role), create middleware, add role validation, include error handling",
+    "acceptance_criteria": [
+      "Middleware extracts X-User-ID and X-User-Role headers",
+      "Role validation (employee, manager, finance)",
+      "Missing/invalid headers return 401 Unauthorized",
+      "User context available to route handlers",
+      "Unit tests for middleware",
+      "Integration tests for auth flows"
+    ],
+    "blocked_by": 1,
+    "labels": ["slice"]
+  },
+  {
+    "title": "[Slice 4] Employee - Submit Expense Claim",
+    "description": "Implement POST /expenses endpoint with input validation (amount, description), create expense with pending status, add integration tests",
+    "acceptance_criteria": [
+      "POST /expenses endpoint accepts amount and description",
+      "Input validation: amount > 0, description non-empty (1-500 chars)",
+      "Claims created with pending status",
+      "Claim ID returned in response",
+      "Only employees can submit (role validation)",
+      "Integration tests for successful submission",
+      "Tests for validation errors (invalid amount, empty description)",
+      "Tests for access control (managers/finance cannot submit)"
+    ],
+    "blocked_by": [2, 3],
+    "labels": ["slice"]
+  },
+  {
+    "title": "[Slice 5] Employee - View Claims",
+    "description": "Implement GET /expenses (list with status filter) and GET /expenses/{id} (view single), add access control, include integration tests",
+    "acceptance_criteria": [
+      "GET /expenses lists all claims by current employee",
+      "Optional status filter (?status=pending) works",
+      "GET /expenses/{id} returns specific claim details",
+      "Employees can only see their own claims",
+      "Rejection reasons visible when claim is rejected",
+      "Integration tests for listing claims",
+      "Integration tests for viewing specific claims",
+      "Tests for access control (cannot see other employees' claims)"
+    ],
+    "blocked_by": [2, 3, 4],
+    "labels": ["slice"]
+  },
+  {
+    "title": "[Slice 6] Manager - Approve & Reject Claims",
+    "description": "Implement GET /expenses?status=pending, POST /expenses/{id}/approve, POST /expenses/{id}/reject with rejection reason capture, add state transition validation, include integration tests",
+    "acceptance_criteria": [
+      "GET /expenses?status=pending shows all pending claims (any employee)",
+      "POST /expenses/{id}/approve transitions pending → approved",
+      "POST /expenses/{id}/reject requires reason parameter",
+      "Reject transitions pending → rejected with reason stored",
+      "Manager ID recorded on approval/rejection",
+      "Timestamps (approved_at/processed_at) recorded",
+      "Invalid state transitions blocked (e.g., cannot approve rejected claim)",
+      "Only managers can approve/reject (role validation)",
+      "Integration tests for approval workflow",
+      "Integration tests for rejection workflow",
+      "Tests for invalid transitions"
+    ],
+    "blocked_by": [2, 3, 4],
+    "labels": ["slice"]
+  },
+  {
+    "title": "[Slice 7] Finance - List & Process Claims",
+    "description": "Implement GET /expenses?status=approved, POST /expenses/{id}/process endpoint with state transition, add integration tests",
+    "acceptance_criteria": [
+      "GET /expenses?status=approved shows all approved claims",
+      "POST /expenses/{id}/process transitions approved → processed",
+      "Finance ID recorded on processing",
+      "Processed timestamp recorded",
+      "Only approved claims can be processed",
+      "Only finance role can process (role validation)",
+      "Integration tests for process workflow",
+      "Tests for invalid transitions (cannot process rejected/pending claims)"
+    ],
+    "blocked_by": [2, 3, 6],
+    "labels": ["slice"]
+  },
+  {
+    "title": "[Slice 8] Comprehensive Error Handling & Edge Cases",
+    "description": "Add validation for edge cases (negative amounts, empty fields, invalid transitions), test unauthorized access scenarios, ensure >80% coverage, add remaining edge case tests",
+    "acceptance_criteria": [
+      "Negative amounts rejected",
+      "Empty/whitespace-only descriptions rejected",
+      "Too-long descriptions rejected (>500 chars)",
+      "Invalid user ID format rejected",
+      "Nonexistent claim returns 404",
+      "Invalid state transitions return 409 Conflict",
+      "Unauthorized access (wrong role) returns 403",
+      "Missing required headers returns 401",
+      "All error responses include descriptive messages",
+      ">80% overall code coverage achieved",
+      "Edge case tests for all workflows"
+    ],
+    "blocked_by": [4, 5, 6, 7],
+    "labels": ["slice"]
+  }
+]

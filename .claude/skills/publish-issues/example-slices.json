@@ -1,0 +1,180 @@
+[
+  {
+    "title": "[Slice 1] Foundation: Project Setup & Auth Middleware",
+    "description": "Set up FastAPI project scaffolding with mocked Entra ID JWT authentication. Create project structure with requirements.txt, FastAPI application entry point, JWT token parser for fake Entra ID tokens, authentication middleware to extract user claims, and role extraction with context injection.",
+    "acceptance_criteria": [
+      "FastAPI app initialized and running on port 8000",
+      "JWT token parser handles fake Entra ID token format",
+      "Auth middleware extracts and validates token claims",
+      "User context available in request via dependency injection",
+      "Unit tests for token parsing and user extraction",
+      "requirements.txt with all dependencies"
+    ],
+    "blocked_by": null,
+    "labels": ["slice", "foundation", "priority:high"]
+  },
+  {
+    "title": "[Slice 2] Foundation: Domain Models & Validation",
+    "description": "Create Pydantic models for Expense and AuditLog with comprehensive input validation. Define all required fields with proper types and validators for amount, category, description, and expense date constraints.",
+    "acceptance_criteria": [
+      "Pydantic models with all field validations",
+      "Custom validators for amount, category, description, expense_date",
+      "Unit tests for all validation rules (valid/invalid inputs)",
+      "Clear error messages for validation failures",
+      "Models in models/ directory"
+    ],
+    "blocked_by": 1,
+    "labels": ["slice", "models", "priority:high"]
+  },
+  {
+    "title": "[Slice 3] Foundation: In-Memory Database Layer",
+    "description": "Create an InMemoryDatabase class that manages all data persistence and enforces business rules. Implement CRUD operations for expenses and audit logs, state transition validation, and query methods.",
+    "acceptance_criteria": [
+      "InMemoryDatabase class with full CRUD operations",
+      "State transition validation in repository methods",
+      "Query methods (by employee_id, by status, etc.)",
+      "Unit tests for CRUD, state validation, edge cases",
+      "No external dependencies (pure Python in-memory storage)",
+      "Database class in database/memory.py"
+    ],
+    "blocked_by": 2,
+    "labels": ["slice", "database", "priority:high"]
+  },
+  {
+    "title": "[Slice 4] Error Handling & Configuration",
+    "description": "Create centralized error handling infrastructure with configurable error codes and messages. Set up custom exception classes, global FastAPI exception handler, and consistent error response format.",
+    "acceptance_criteria": [
+      "Custom exception classes defined",
+      "Error codes centralized and configurable",
+      "Global exception handler in FastAPI",
+      "Correct HTTP status codes returned",
+      "Unit tests for error responses across scenarios",
+      "Configuration in config.py"
+    ],
+    "blocked_by": 1,
+    "labels": ["slice", "error-handling", "priority:medium"]
+  },
+  {
+    "title": "[Slice 5] Employee: Submit Expense Claim",
+    "description": "Implement the expense submission workflow end-to-end with POST /expenses endpoint, input validation, database storage, and audit logging.",
+    "acceptance_criteria": [
+      "POST /expenses endpoint accepts valid expense data",
+      "Input validation enforces all rules (amount, category, description, date)",
+      "Expense stored with SUBMITTED status",
+      "Audit log entry created for submission",
+      "Returns 201 with created expense details",
+      "Unit tests for valid/invalid submissions",
+      "Integration test: employee can submit, view returned UUID"
+    ],
+    "blocked_by": 4,
+    "labels": ["slice", "feature", "priority:high"]
+  },
+  {
+    "title": "[Slice 6] Manager: Approve/Reject Claim",
+    "description": "Implement manager approval and rejection workflow with PATCH endpoints, state transitions, and audit logging.",
+    "acceptance_criteria": [
+      "PATCH /approve endpoint transitions SUBMITTED → MANAGER_APPROVED",
+      "PATCH /reject endpoint transitions SUBMITTED → REJECTED with reason",
+      "Manager ID is tracked in expense",
+      "Audit log entries created with state changes",
+      "Self-approval prevention working",
+      "Cannot approve already-approved claims (state validation)",
+      "Unit tests for approval, rejection, edge cases",
+      "Integration test: submit → manager approves/rejects workflow"
+    ],
+    "blocked_by": 5,
+    "labels": ["slice", "feature", "priority:high"]
+  },
+  {
+    "title": "[Slice 7] Finance: Process Approved Claim",
+    "description": "Implement finance processing workflow with PATCH /process endpoint, state transitions, and audit logging.",
+    "acceptance_criteria": [
+      "PATCH /process endpoint transitions MANAGER_APPROVED → FINANCE_PROCESSED",
+      "Finance ID tracked in expense",
+      "Cannot process claims in other states (state validation)",
+      "Audit log entry created",
+      "Returns 200 with updated expense",
+      "Unit tests for processing, state validation",
+      "Integration test: submit → approve → process workflow"
+    ],
+    "blocked_by": 6,
+    "labels": ["slice", "feature", "priority:high"]
+  },
+  {
+    "title": "[Slice 8] Employee: Resubmit Rejected Claim",
+    "description": "Implement resubmission workflow for rejected claims with PATCH endpoint, validation, and state reset.",
+    "acceptance_criteria": [
+      "PATCH /resubmit endpoint accepts updated expense data",
+      "Input validation enforced (new amount, category, description, date)",
+      "REJECTED → SUBMITTED transition",
+      "Rejection reason cleared",
+      "Audit log shows full state change (previous_state, new_state)",
+      "Only owner can resubmit",
+      "Can only resubmit REJECTED claims",
+      "Unit tests for resubmission, validation, authorization",
+      "Integration test: submit → reject → resubmit → approve workflow"
+    ],
+    "blocked_by": 6,
+    "labels": ["slice", "feature", "priority:medium"]
+  },
+  {
+    "title": "[Slice 9] Employee: View & List Claims",
+    "description": "Implement listing and viewing of expense claims with role-based filtering and authorization checks.",
+    "acceptance_criteria": [
+      "GET /expenses returns all claims for managers/finance",
+      "GET /expenses returns only own claims for employees",
+      "GET /expenses/{id} checks authorization (owner or manager/finance)",
+      "Returns 404 if not found or not authorized",
+      "Optional status/category filters work",
+      "Unit tests for role-based access control",
+      "Integration tests: employee sees own, manager sees all, finance sees all"
+    ],
+    "blocked_by": 5,
+    "labels": ["slice", "feature", "priority:medium"]
+  },
+  {
+    "title": "[Slice 10] Employee: Delete Claim",
+    "description": "Implement claim deletion with restrictions for state and ownership.",
+    "acceptance_criteria": [
+      "DELETE /expenses/{id} deletes only if SUBMITTED or REJECTED",
+      "Cannot delete if in approval workflow (409 Conflict)",
+      "Only owner can delete (403 if not owner)",
+      "Audit log entry created for deletion",
+      "Returns 204 on success",
+      "Unit tests for deletion rules, authorization",
+      "Integration test: submit, reject, delete workflow"
+    ],
+    "blocked_by": 5,
+    "labels": ["slice", "feature", "priority:low"]
+  },
+  {
+    "title": "[Slice 11] Audit Logging: Full History Access",
+    "description": "Implement audit log viewing endpoints for compliance tracking with filtering and access control.",
+    "acceptance_criteria": [
+      "GET /audit-logs returns all audit entries",
+      "GET /expenses/{id}/audit-log returns history for single expense",
+      "Audit logs accurate across all operations (submit, approve, reject, resubmit, process, delete)",
+      "State diffs complete (previous_state, new_state)",
+      "Optional filters work (action, actor_id, date range)",
+      "Authorization checks in place",
+      "Unit tests for audit log retrieval",
+      "Integration test: perform all actions, verify audit trail is complete"
+    ],
+    "blocked_by": 7,
+    "labels": ["slice", "audit", "priority:medium"]
+  },
+  {
+    "title": "[Slice 12] End-to-End Workflow Tests & Documentation",
+    "description": "Comprehensive integration tests covering full workflows and complete API documentation with examples.",
+    "acceptance_criteria": [
+      "Integration tests pass for full workflows",
+      "README complete with setup and examples",
+      "Swagger docs accessible and accurate",
+      "Sample curl commands work",
+      "Code coverage >90%",
+      "All edge cases tested (self-approval, invalid states, auth failures)"
+    ],
+    "blocked_by": 11,
+    "labels": ["slice", "testing", "priority:high"]
+  }
+]

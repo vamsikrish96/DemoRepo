@@ -1,0 +1,99 @@
+{
+  "slices": [
+    {
+      "number": 1,
+      "title": "[Slice 1] Foundation: Project Setup & Auth Middleware",
+      "test_file": "tests/test_auth.py",
+      "test_pattern": null,
+      "description": "Set up FastAPI with mocked Entra ID JWT authentication"
+    },
+    {
+      "number": 2,
+      "title": "[Slice 2] Domain Models & Validation",
+      "test_file": "tests/test_models.py",
+      "test_pattern": null,
+      "description": "Create Pydantic models with comprehensive validation",
+      "blocked_by": 1
+    },
+    {
+      "number": 3,
+      "title": "[Slice 3] In-Memory Database Layer",
+      "test_file": "tests/test_workflows.py",
+      "test_pattern": null,
+      "description": "Implement in-memory database with CRUD operations",
+      "blocked_by": 2
+    },
+    {
+      "number": 4,
+      "title": "[Slice 4] Error Handling & Configuration",
+      "test_file": "tests/test_auth.py tests/test_models.py",
+      "test_pattern": null,
+      "description": "Create error handling and configuration management",
+      "blocked_by": 1
+    },
+    {
+      "number": 5,
+      "title": "[Slice 5] Employee: Submit Expense Claim",
+      "test_file": "tests/test_workflows.py",
+      "test_pattern": "test_submit_expense_workflow",
+      "description": "Implement expense submission workflow",
+      "blocked_by": 4
+    },
+    {
+      "number": 6,
+      "title": "[Slice 6] Manager: Approve/Reject Claim",
+      "test_file": "tests/test_workflows.py",
+      "test_pattern": "test_manager_approve|test_manager_reject",
+      "description": "Implement manager approval and rejection",
+      "blocked_by": 5
+    },
+    {
+      "number": 7,
+      "title": "[Slice 7] Finance: Process Approved Claim",
+      "test_file": "tests/test_workflows.py",
+      "test_pattern": "test_finance_process_expense",
+      "description": "Implement finance processing workflow",
+      "blocked_by": 6
+    },
+    {
+      "number": 8,
+      "title": "[Slice 8] Employee: Resubmit Rejected Claim",
+      "test_file": "tests/test_workflows.py",
+      "test_pattern": "test_resubmit_rejected_expense",
+      "description": "Implement rejection and resubmission",
+      "blocked_by": 6
+    },
+    {
+      "number": 9,
+      "title": "[Slice 9] Employee: View & List Claims",
+      "test_file": "tests/test_workflows.py",
+      "test_pattern": "test_list_expenses_role_based_filtering",
+      "description": "Implement list and view endpoints",
+      "blocked_by": 5
+    },
+    {
+      "number": 10,
+      "title": "[Slice 10] Employee: Delete Claim",
+      "test_file": "tests/test_workflows.py",
+      "test_pattern": "test_delete_submitted_expense",
+      "description": "Implement deletion with restrictions",
+      "blocked_by": 5
+    },
+    {
+      "number": 11,
+      "title": "[Slice 11] Audit Logging: Full History Access",
+      "test_file": "tests/test_workflows.py",
+      "test_pattern": "test_audit_log_created",
+      "description": "Implement audit logging endpoints",
+      "blocked_by": 7
+    },
+    {
+      "number": 12,
+      "title": "[Slice 12] End-to-End Workflow Tests & Documentation",
+      "test_file": "tests/test_workflows.py",
+      "test_pattern": null,
+      "description": "Comprehensive E2E tests and documentation",
+      "blocked_by": 11
+    }
+  ]
+}
