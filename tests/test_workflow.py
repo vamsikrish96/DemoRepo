@@ -120,7 +120,7 @@ def test_reject_claim_success(client, clear_store, employee_token, manager_token
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "rejected"
-    assert data["approval_reason"] == "Insufficient documentation"
+    assert data["rejection_reason"] == "Insufficient documentation"
 
 
 def test_process_claim_success(client, clear_store, employee_token, manager_token, finance_token):

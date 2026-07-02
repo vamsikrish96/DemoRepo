@@ -1,14 +1,20 @@
-import json
-import base64
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import HTTPException, status
+from jose import JWTError, jwt
 from app.models import User, UserRole
+
+SECRET_KEY = "dev-secret-key-change-in-production"
+ALGORITHM = "HS256"
+TOKEN_EXPIRY_MINUTES = 60
 
 MOCK_USERS = {
     "emp1": {"password": "pass", "role": UserRole.EMPLOYEE, "department": "Sales"},
     "emp2": {"password": "pass", "role": UserRole.EMPLOYEE, "department": "Engineering"},
+    "emp3": {"password": "pass", "role": UserRole.EMPLOYEE, "department": "Marketing"},
     "mgr1": {"password": "pass", "role": UserRole.MANAGER, "department": "Sales"},
     "mgr2": {"password": "pass", "role": UserRole.MANAGER, "department": "Engineering"},
+    "mgr3": {"password": "pass", "role": UserRole.MANAGER, "department": "Marketing"},
     "fin1": {"password": "pass", "role": UserRole.FINANCE, "department": "Finance"},
     "admin1": {"password": "pass", "role": UserRole.ADMIN, "department": "Admin"},
 }
@@ -16,30 +22,31 @@ MOCK_USERS = {
 MANAGER_ASSIGNMENTS = {
     "emp1": "mgr1",
     "emp2": "mgr2",
+    "emp3": "mgr3",
 }
 
 
 def create_bearer_token(user_id: str, role: UserRole, department: Optional[str] = None) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_EXPIRY_MINUTES)
     payload = {
         "user_id": user_id,
         "role": role.value,
         "department": department,
+        "exp": expire,
     }
-    payload_json = json.dumps(payload)
-    token = base64.b64encode(payload_json.encode()).decode()
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return token
 
 
 def decode_bearer_token(token: str) -> Optional[User]:
     try:
-        payload_json = base64.b64decode(token.encode()).decode()
-        payload = json.loads(payload_json)
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return User(
             user_id=payload["user_id"],
             role=UserRole(payload["role"]),
             department=payload.get("department"),
         )
-    except Exception:
+    except JWTError:
         return None
 
 

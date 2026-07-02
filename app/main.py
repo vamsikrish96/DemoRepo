@@ -27,24 +27,46 @@ app = FastAPI(
 )
 
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> User:
+def extract_token(authorization: Optional[str]) -> str:
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authorization header",
         )
-
     try:
         scheme, token = authorization.split(" ", 1)
         if scheme.lower() != "bearer":
             raise ValueError()
+        return token
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authorization header format",
         )
 
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> User:
+    token = extract_token(authorization)
     return get_user_from_token(token)
+
+
+def require_role(user: User, required_role: UserRole) -> User:
+    if user.role != required_role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This action requires {required_role.value} role",
+        )
+    return user
+
+
+def require_any_role(user: User, *required_roles: UserRole) -> User:
+    if user.role not in required_roles:
+        roles = ", ".join(r.value for r in required_roles)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This action requires one of: {roles}",
+        )
+    return user
 
 
 # ===== Auth Endpoints =====
@@ -77,14 +99,15 @@ def create_claim(
     authorization: Optional[str] = Header(None),
 ) -> ExpenseClaimResponse:
     current_user = get_current_user(authorization)
-
-    if current_user.role != UserRole.EMPLOYEE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only employees can create claims",
-        )
+    require_role(current_user, UserRole.EMPLOYEE)
 
     manager_id = get_manager_for_employee(current_user.user_id)
+    if not manager_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Employee must have assigned manager",
+        )
+
     claim = store.create_claim(
         employee_id=current_user.user_id,
         amount=request.amount,
@@ -269,12 +292,7 @@ def approve_claim(
     authorization: Optional[str] = Header(None),
 ) -> ExpenseClaimResponse:
     current_user = get_current_user(authorization)
-
-    if current_user.role != UserRole.MANAGER:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only managers can approve claims",
-        )
+    require_role(current_user, UserRole.MANAGER)
 
     claim = store.get_claim(claim_id)
     if not claim:
@@ -295,8 +313,7 @@ def approve_claim(
             detail="Can only approve submitted claims",
         )
 
-    approved_claim = store.approve_claim(claim_id, request.approval_reason)
-    return approved_claim
+    return store.approve_claim(claim_id, request.approval_reason)
 
 
 @app.put("/claims/{claim_id}/reject", response_model=ExpenseClaimResponse)
@@ -306,12 +323,7 @@ def reject_claim(
     authorization: Optional[str] = Header(None),
 ) -> ExpenseClaimResponse:
     current_user = get_current_user(authorization)
-
-    if current_user.role != UserRole.MANAGER:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only managers can reject claims",
-        )
+    require_role(current_user, UserRole.MANAGER)
 
     claim = store.get_claim(claim_id)
     if not claim:
@@ -332,8 +344,7 @@ def reject_claim(
             detail="Can only reject submitted claims",
         )
 
-    rejected_claim = store.reject_claim(claim_id, request.approval_reason)
-    return rejected_claim
+    return store.reject_claim(claim_id, request.approval_reason)
 
 
 # ===== Finance Processing Endpoints =====
@@ -345,12 +356,7 @@ def process_claim(
     authorization: Optional[str] = Header(None),
 ) -> ExpenseClaimResponse:
     current_user = get_current_user(authorization)
-
-    if current_user.role != UserRole.FINANCE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only finance can process claims",
-        )
+    require_role(current_user, UserRole.FINANCE)
 
     claim = store.get_claim(claim_id)
     if not claim:
@@ -365,8 +371,7 @@ def process_claim(
             detail="Can only process approved claims",
         )
 
-    processed_claim = store.process_claim(claim_id)
-    return processed_claim
+    return store.process_claim(claim_id)
 
 
 @app.get("/health")

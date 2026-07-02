@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
+from threading import Lock
 from uuid import uuid4
 from app.models import ExpenseClaimResponse, ClaimStatus
 
@@ -8,6 +9,7 @@ class ExpenseClaimStore:
     def __init__(self):
         self.claims: Dict[str, dict] = {}
         self.claim_counter = 0
+        self.lock = Lock()
 
     def create_claim(
         self,
@@ -18,10 +20,11 @@ class ExpenseClaimStore:
         category: Optional[str] = None,
         manager_id: Optional[str] = None,
     ) -> ExpenseClaimResponse:
-        self.claim_counter += 1
-        claim_id = f"CLM{self.claim_counter:05d}"
-        now = datetime.now(timezone.utc)
+        with self.lock:
+            self.claim_counter += 1
+            claim_id = f"CLM{self.claim_counter:05d}"
 
+        now = datetime.now(timezone.utc)
         claim = {
             "claim_id": claim_id,
             "employee_id": employee_id,
@@ -33,12 +36,14 @@ class ExpenseClaimStore:
             "manager_id": manager_id,
             "submission_date": None,
             "approval_reason": None,
+            "rejection_reason": None,
             "processed_date": None,
             "created_at": now,
             "updated_at": now,
         }
 
-        self.claims[claim_id] = claim
+        with self.lock:
+            self.claims[claim_id] = claim
         return ExpenseClaimResponse(**claim)
 
     def get_claim(self, claim_id: str) -> Optional[ExpenseClaimResponse]:
@@ -104,7 +109,7 @@ class ExpenseClaimStore:
 
         claim = self.claims[claim_id]
         claim["status"] = ClaimStatus.REJECTED
-        claim["approval_reason"] = rejection_reason
+        claim["rejection_reason"] = rejection_reason
         claim["updated_at"] = datetime.now(timezone.utc)
         return ExpenseClaimResponse(**claim)
 

@@ -101,6 +101,7 @@ class ExpenseClaimResponse(BaseModel):
     manager_id: Optional[str] = None
     submission_date: Optional[datetime] = None
     approval_reason: Optional[str] = None
+    rejection_reason: Optional[str] = None
     processed_date: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
